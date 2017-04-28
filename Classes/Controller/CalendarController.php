@@ -16,6 +16,7 @@ namespace DWenzel\T3eventsCalendar\Controller;
  * The TYPO3 project - inspiring people to share!
  */
 
+use DWenzel\T3calendar\Domain\Factory\CalendarFactoryTrait;
 use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfigurationFactoryTrait;
 use DWenzel\T3events\Controller\CategoryRepositoryTrait;
 use DWenzel\T3events\Controller\DemandTrait;
@@ -37,10 +38,13 @@ class CalendarController
     extends ActionController
     implements FilterableControllerInterface
 {
-    use CategoryRepositoryTrait, CalendarConfigurationFactoryTrait,
+    use CategoryRepositoryTrait, CalendarConfigurationFactoryTrait, CalendarFactoryTrait,
         DemandTrait, EntityNotFoundHandlerTrait, FilterableControllerTrait,
         PerformanceDemandFactoryTrait, PerformanceRepositoryTrait,
         SearchTrait, SessionTrait, SettingsUtilityTrait, TranslateTrait;
+
+    const CALENDAR_SHOW_ACTION = 'showAction';
+    const CALENDAR_CONTROL_ACTION = 'controlAction';
 
     /**
      * Constructor
@@ -66,15 +70,40 @@ class CalendarController
     }
 
     /**
-     * Calendar action
+     * Show action
+     * Show a calendar widget containing performances as items
+     *
      * @param array $overwriteDemand
      */
-    public function calendarAction(array $overwriteDemand = null)
+    public function showAction(array $overwriteDemand = null)
+    {
+        $templateVariables = $this->getTemplateVariables($overwriteDemand);
+        $this->emitSignal(__CLASS__, self::CALENDAR_SHOW_ACTION, $templateVariables);
+        $this->view->assignMultiple($templateVariables);
+    }
+
+    /**
+     * Control action
+     * displays a calender control which filters a list plugin
+     */
+    public function controlAction()
+    {
+        $overwriteDemand = unserialize($this->session->get('tx_t3events_overwriteDemand'));
+        $templateVariables = $this->getTemplateVariables($overwriteDemand, true);
+        $this->emitSignal(__CLASS__, self::CALENDAR_SHOW_ACTION, $templateVariables);
+        $this->view->assignMultiple($templateVariables);
+    }
+
+    /**
+     * @param $overwriteDemand
+     * @param bool $withCalendar
+     * @return array
+     */
+    protected function getTemplateVariables($overwriteDemand, $withCalendar = false)
     {
         $demand = $this->performanceDemandFactory->createFromSettings($this->settings);
         $this->overwriteDemandObject($demand, $overwriteDemand);
         $performances = $this->performanceRepository->findDemanded($demand);
-
         $calendarConfiguration = $this->calendarConfigurationFactory->create($this->settings);
 
         $templateVariables = [
@@ -84,7 +113,10 @@ class CalendarController
             'overwriteDemand' => $overwriteDemand
         ];
 
-        $this->emitSignal(__CLASS__, self::PERFORMANCE_CALENDAR_ACTION, $templateVariables);
-        $this->view->assignMultiple($templateVariables);
+        if ($withCalendar) {
+            $templateVariables['calendar'] = $this->calendarFactory->create($calendarConfiguration, $performances);
+        }
+
+        return $templateVariables;
     }
 }

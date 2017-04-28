@@ -1,10 +1,9 @@
 <?php
 
-namespace DWenzel\T3events\Tests\Unit\Controller;
+namespace DWenzel\T3eventsCalendar\Tests\Unit\Controller;
 
 use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfigurationFactory;
 use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfigurationFactoryInterface;
-use DWenzel\T3eventsCalendar\Controller\CalendarController;
 use DWenzel\T3events\Domain\Factory\Dto\PerformanceDemandFactory;
 use DWenzel\T3events\Domain\Model\Dto\PerformanceDemand;
 use DWenzel\T3events\Domain\Repository\EventTypeRepository;
@@ -13,6 +12,7 @@ use DWenzel\T3events\Domain\Repository\PerformanceRepository;
 use DWenzel\T3events\Domain\Repository\VenueRepository;
 use DWenzel\T3events\Session\SessionInterface;
 use DWenzel\T3events\Utility\SettingsUtility;
+use DWenzel\T3eventsCalendar\Controller\CalendarController;
 use Nimut\TestingFramework\MockObject\AccessibleMockObjectInterface;
 use Nimut\TestingFramework\TestCase\UnitTestCase;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
@@ -61,6 +61,11 @@ class CalendarControllerTest extends UnitTestCase
      */
     protected $performanceRepository;
 
+    /**
+     * @var SessionInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $session;
+
     public function setUp()
     {
         $this->subject = $this->getAccessibleMock(CalendarController::class,
@@ -106,6 +111,10 @@ class CalendarControllerTest extends UnitTestCase
         $this->calendarConfigurationFactory->method('create')
             ->will($this->returnValue($mockCalendarConfiguration));
         $this->subject->injectCalendarConfigurationFactory($this->calendarConfigurationFactory);
+        $this->session = $this->getMock(
+            SessionInterface::class, ['get', 'set', 'has', 'clean', 'setNamespace']
+        );
+        $this->subject->injectSession($this->session);
     }
 
     /**
@@ -126,24 +135,13 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function constructorSetsExtensionName()
     {
-        $subject = $this->getMock(CalendarController::class, [], [], 'tx_t3events_foo_class', false);
+        $subject = $this->getMock(CalendarController::class, [], [], 'tx_foo_class', false);
         $subject->__construct();
         $this->assertAttributeSame(
-            't3events_calendar',
+            'foo',
             'extensionName',
             $subject
         );
-    }
-
-    protected function mockSettingsUtility()
-    {
-        $mockSettingsUtility = $this->getMock(
-            SettingsUtility::class, ['getControllerKey']
-        );
-        $this->subject->injectSettingsUtility($mockSettingsUtility);
-        $mockSettingsUtility->expects($this->any())
-            ->method('getControllerKey')
-            ->will($this->returnValue('calendar'));
     }
 
     /**
@@ -170,42 +168,21 @@ class CalendarControllerTest extends UnitTestCase
         $this->subject->initializeAction();
     }
 
-    /**
-     * @test
-     */
-    public function initializeQuickMenuActionResetsOverwriteDemandInSession()
+    protected function mockSettingsUtility()
     {
-        $mockSession = $this->subject->_get('session');
-        $mockRequest = $this->subject->_get('request');
-        $mockRequest->expects($this->once())
-            ->method('hasArgument')
-            ->will($this->returnValue(false));
-        $mockSession->expects($this->once())
-            ->method('clean');
-        $this->subject->initializeQuickMenuAction();
+        $mockSettingsUtility = $this->getMock(
+            SettingsUtility::class, ['getControllerKey']
+        );
+        $this->subject->injectSettingsUtility($mockSettingsUtility);
+        $mockSettingsUtility->expects($this->any())
+            ->method('getControllerKey')
+            ->will($this->returnValue('calendar'));
     }
-
-    /**
-     * @param array $methodsToStub
-     */
-    protected function injectMockRepositories(array $methodsToStub)
-    {
-        $repositoryClasses = [
-            'genreRepository' => GenreRepository::class,
-            'venueRepository' => VenueRepository::class,
-            'eventTypeRepository' => EventTypeRepository::class,
-        ];
-        foreach ($repositoryClasses as $propertyName => $className) {
-            $mock = $this->getAccessibleMock($className, $methodsToStub, [], '', false, true, false);
-            $this->inject($this->subject, $propertyName, $mock);
-        }
-    }
-    
 
     /**
      * @test
      */
-    public function calendarActionGetsPerformanceDemandFromFactory()
+    public function showActionGetsPerformanceDemandFromFactory()
     {
         $mockDemand = $this->getMock(PerformanceDemand::class);
         $this->performanceDemandFactory->expects($this->once())
@@ -213,13 +190,13 @@ class CalendarControllerTest extends UnitTestCase
             ->with($this->settings)
             ->will($this->returnValue($mockDemand));
 
-        $this->subject->calendarAction();
+        $this->subject->showAction();
     }
 
     /**
      * @test
      */
-    public function calendarActionGetsConfigurationFromFactory()
+    public function showActionGetsConfigurationFromFactory()
     {
         $settings = [];
         $this->subject->_set('settings', $settings);
@@ -227,7 +204,7 @@ class CalendarControllerTest extends UnitTestCase
         $this->calendarConfigurationFactory->expects($this->once())
             ->method('create')
             ->with($settings);
-        $this->subject->calendarAction();
+        $this->subject->showAction();
     }
 
     /**
@@ -250,7 +227,7 @@ class CalendarControllerTest extends UnitTestCase
     /**
      * @test
      */
-    public function calendarActionOverwritesDemandObject()
+    public function showActionOverwritesDemandObject()
     {
         $this->subject = $this->getAccessibleMock(CalendarController::class,
             ['overwriteDemandObject', 'emitSignal'], [], '', false);
@@ -267,29 +244,139 @@ class CalendarControllerTest extends UnitTestCase
             ->method('overwriteDemandObject')
             ->with($mockDemand);
 
-        $this->subject->calendarAction();
+        $this->subject->showAction();
     }
 
     /**
      * @test
      */
-    public function calendarActionEmitsSignal()
+    public function showActionEmitsSignal()
     {
         $this->subject->expects($this->once())
             ->method('emitSignal')
-            ->with(CalendarController::class, CalendarController::PERFORMANCE_CALENDAR_ACTION);
-        $this->subject->calendarAction();
+            ->with(CalendarController::class, CalendarController::CALENDAR_SHOW_ACTION);
+        $this->subject->showAction();
     }
 
     /**
      * @test
      */
-    public function calendarActionAssignsVariablesToView()
+    public function showActionAssignsVariablesToView()
     {
         $this->view->expects($this->once())
             ->method('assignMultiple');
 
-        $this->subject->calendarAction();
+        $this->subject->showAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionGetsPerformanceDemandFromFactory()
+    {
+        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $this->performanceDemandFactory->expects($this->once())
+            ->method('createFromSettings')
+            ->with($this->settings)
+            ->will($this->returnValue($mockDemand));
+
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionGetsConfigurationFromFactory()
+    {
+        $settings = [];
+        $this->subject->_set('settings', $settings);
+        $this->mockGetPerformanceDemandFromFactory();
+        $this->calendarConfigurationFactory->expects($this->once())
+            ->method('create')
+            ->with($settings);
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionOverwritesDemandObject()
+    {
+        $overwriteDemandFromSession = '';
+        $this->subject = $this->getAccessibleMock(CalendarController::class,
+            ['overwriteDemandObject', 'emitSignal'], [], '', false);
+        $this->subject->injectSession($this->session);
+        $this->session->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($overwriteDemandFromSession));
+
+        $this->subject->injectPerformanceDemandFactory($this->performanceDemandFactory);
+        $this->subject->_set('settings', $this->settings);
+        $this->subject->injectCalendarConfigurationFactory($this->calendarConfigurationFactory);
+        $this->subject->injectPerformanceRepository($this->performanceRepository);
+        $this->subject->_set('view', $this->view);
+
+        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $this->performanceDemandFactory->method('createFromSettings')
+            ->will($this->returnValue($mockDemand));
+        $this->subject->expects($this->once())
+            ->method('overwriteDemandObject')
+            ->with($mockDemand);
+
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionEmitsSignal()
+    {
+        $this->subject->expects($this->once())
+            ->method('emitSignal')
+            ->with(CalendarController::class, CalendarController::CALENDAR_SHOW_ACTION);
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionAssignsVariablesToView()
+    {
+        $this->view->expects($this->once())
+            ->method('assignMultiple');
+
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @test
+     */
+    public function controlActionGetsOverwriteDemandFromSession()
+    {
+        $this->session->expects($this->once())
+            ->method('get')
+            ->with('tx_t3events_overwriteDemand');
+        $this->subject->expects($this->once())
+            ->method('emitSignal')
+            ->will($this->returnValue([]));
+
+        $this->subject->controlAction();
+    }
+
+    /**
+     * @param array $methodsToStub
+     */
+    protected function injectMockRepositories(array $methodsToStub)
+    {
+        $repositoryClasses = [
+            'genreRepository' => GenreRepository::class,
+            'venueRepository' => VenueRepository::class,
+            'eventTypeRepository' => EventTypeRepository::class,
+        ];
+        foreach ($repositoryClasses as $propertyName => $className) {
+            $mock = $this->getAccessibleMock($className, $methodsToStub, [], '', false, true, false);
+            $this->inject($this->subject, $propertyName, $mock);
+        }
     }
 }
 

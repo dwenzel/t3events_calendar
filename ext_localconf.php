@@ -23,4 +23,17 @@ if (
     $TYPO3_CONF_VARS['SYS']['caching']['cacheConfigurations'][$identifier]['backend'] = 'TYPO3\\CMS\\Core\\Cache\\Backend\\NullBackend';
 }
 
+// configure plugin
+\TYPO3\CMS\Extbase\Utility\ExtensionUtility::configurePlugin(
+    'DWenzel.' . $_EXTKEY,
+    'Calendar',
+    [
+        'Calendar' => 'show, control',
+    ],
+    // non-cacheable actions
+    [
+        'Calendar' => 'control'
+    ]
+);
+
 unset($identifier, $emSettings);

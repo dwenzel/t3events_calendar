@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<description>Context Sensitive Help (CSH) for backend</description>
+		<type>CSH</type>
+		<fileId>EXT:t3events/Resources/Private/Language/locallang_csh_flexform.xml</fileId>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="switchableControllerActions.description"><![CDATA[
+					<b>Choose plugin type.</b><br />
+					<i>Calendar</i>: show calendar view for events.<br />
+					<i>Control</i>: show a calendar control for the list view of another plugin
+					]]>
+			</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="switchableControllerActions.description"><![CDATA[
+				<b>Plugintyp auswählen.</b><br />
+				<i>Kalender</i>: Zeigt eine Kalenderansicht für Veranstaltungen.<br />
+				Steuerung: Zeigt eine Kalendersteuerung für andere Plugins<br />
+				Bitte konfigurieren Sie das Plugin und geben Sie im Reiter 'Verhalten' eine oder mehrere Seiten mit Datensätzen für Veranstaltungen an.
+				]]>
+			</label>
+			<label index="settings.cache.makeNonCacheable.description">Inhalte des Plugins nicht zwischenspeichern.</label>
+		</languageKey>
+	</data>
+</T3locallang>
