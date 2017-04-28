@@ -2,6 +2,9 @@
 
 namespace DWenzel\T3eventsCalendar\Tests\Unit\Controller;
 
+use DWenzel\T3calendar\Domain\Factory\CalendarFactory;
+use DWenzel\T3calendar\Domain\Factory\CalendarFactoryInterface;
+use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfiguration;
 use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfigurationFactory;
 use DWenzel\T3calendar\Domain\Model\Dto\CalendarConfigurationFactoryInterface;
 use DWenzel\T3events\Domain\Factory\Dto\PerformanceDemandFactory;
@@ -62,6 +65,11 @@ class CalendarControllerTest extends UnitTestCase
     protected $performanceRepository;
 
     /**
+     * @var CalendarFactoryInterface | \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $calendarFactory;
+
+    /**
      * @var SessionInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $session;
@@ -107,7 +115,7 @@ class CalendarControllerTest extends UnitTestCase
 
         $this->calendarConfigurationFactory = $this->getMockBuilder(CalendarConfigurationFactory::class)
             ->setMethods(['create'])->getMock();
-        $mockCalendarConfiguration = $this->getMockForAbstractClass(CalendarConfigurationFactoryInterface::class);
+        $mockCalendarConfiguration = $this->getMockForAbstractClass(CalendarConfiguration::class);
         $this->calendarConfigurationFactory->method('create')
             ->will($this->returnValue($mockCalendarConfiguration));
         $this->subject->injectCalendarConfigurationFactory($this->calendarConfigurationFactory);
@@ -115,6 +123,10 @@ class CalendarControllerTest extends UnitTestCase
             SessionInterface::class, ['get', 'set', 'has', 'clean', 'setNamespace']
         );
         $this->subject->injectSession($this->session);
+        $this->calendarFactory = $this->getMock(
+            CalendarFactory::class, ['create']
+        );
+        $this->subject->injectCalendarFactory($this->calendarFactory);
     }
 
     /**
@@ -306,6 +318,8 @@ class CalendarControllerTest extends UnitTestCase
         $this->subject = $this->getAccessibleMock(CalendarController::class,
             ['overwriteDemandObject', 'emitSignal'], [], '', false);
         $this->subject->injectSession($this->session);
+        $this->subject->injectCalendarFactory($this->calendarFactory);
+        
         $this->session->expects($this->once())
             ->method('get')
             ->will($this->returnValue($overwriteDemandFromSession));
