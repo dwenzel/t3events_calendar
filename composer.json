@@ -11,7 +11,7 @@
   ],
   "require": {
     "typo3/cms": ">=8.7.6,<=8.99.99",
-    "dwenzel/t3events": "^0.38.0",
+    "dwenzel/t3events": "~0.38",
     "dwenzel/t3calendar": "~0.6"
   },
   "require-dev": {
