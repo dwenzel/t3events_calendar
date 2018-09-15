@@ -105,18 +105,20 @@ class CalendarControllerTest extends UnitTestCase
         $this->subject = $this->getAccessibleMock(
             CalendarController::class, ['dummy']
         );
-        $this->view = $this->getMock(ViewInterface::class);
+        $this->view = $this->getMockBuilder(ViewInterface::class)->getMockForAbstractClass();
         $this->subject->_set('view', $this->view);
         $this->mockConfiguration();
-        $this->objectManager = $this->getMock(ObjectManagerInterface::class);
+        $this->objectManager = $this->getMockBuilder(ObjectManagerInterface::class)->getMockForAbstractClass();
         $this->subject->injectObjectManager($this->objectManager);
-        $this->calendarFactory = $this->getMock(
-            CalendarFactory::class, ['create']
-        );
+        $this->calendarFactory = $this->getMockBuilder(CalendarFactory::class)
+            ->setMethods(['create'])->getMock();
         $this->calendarFactory->method('create')->will($this->returnValue($this->configuration));
         $this->subject->injectCalendarFactory($this->calendarFactory);
         $this->subject->_set('objects', $this->objects);
-        $this->contentCache = $this->getMock(VariableFrontend::class, ['get', 'set'], [], '', false);
+        $this->contentCache = $this->getMockBuilder(VariableFrontend::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['get', 'set'])
+            ->getMock();
         $this->contentCache->expects($this->any())
             ->method('get')
             ->will($this->returnValue(false));
@@ -125,7 +127,8 @@ class CalendarControllerTest extends UnitTestCase
             'contentCache',
             $this->contentCache
         );
-        $this->cacheManager = $this->getMock(CacheManager::class, ['getCache']);
+        $this->cacheManager = $this->getMockBuilder(CacheManager::class)
+            ->setMethods(['getCache'])->getMock();
         $this->cacheManager->expects($this->any())
             ->method('getCache')
             ->will($this->returnValue($this->contentCache));
@@ -152,10 +155,8 @@ class CalendarControllerTest extends UnitTestCase
      */
     protected function mockConfiguration()
     {
-        $this->configuration = $this->getMock(
-            CalendarConfiguration::class,
-            ['getDisplayPeriod', 'setDisplayPeriod']
-        );
+        $this->configuration = $this->getMockBuilder(CalendarConfiguration::class)
+            ->setMethods(['getDisplayPeriod', 'setDisplayPeriod'])->getMock();
         $startDate = new \DateTime();
         $this->configuration->setStartDate($startDate);
 
@@ -181,7 +182,7 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function initializeActionSetsObjectsFromWidgetConfiguration()
     {
-        $objects = $this->getMock(QueryResultInterface::class);
+        $objects = $this->getMockBuilder(QueryResultInterface::class)->getMockForAbstractClass();
         $widgetConfiguration = [
             'objects' => $objects
         ];
@@ -199,7 +200,7 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function initializeActionSetsConfigurationFromWidgetConfiguration()
     {
-        $configuration = $this->getMock(CalendarConfiguration::class);
+        $configuration = $this->getMockBuilder(CalendarConfiguration::class)->getMock();
         $widgetConfiguration = [
             'configuration' => $configuration
         ];
@@ -301,6 +302,7 @@ class CalendarControllerTest extends UnitTestCase
      * @param string $shift
      * @param string $interval Interval spec
      * @param bool $invertInterval
+     * @throws \Exception
      */
     public function dayActionAdjustsStartDateByShiftAndOrigin($origin, $shift, $interval, $invertInterval)
     {

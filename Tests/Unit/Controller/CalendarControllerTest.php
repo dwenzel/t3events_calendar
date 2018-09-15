@@ -78,31 +78,34 @@ class CalendarControllerTest extends UnitTestCase
     {
         $this->subject = $this->getAccessibleMock(CalendarController::class,
             ['dummy', 'emitSignal', 'createSearchObject'], [], '', false);
-        $mockSession = $this->getMock(
-            SessionInterface::class, ['has', 'get', 'clean', 'set', 'setNamespace']
-        );
-        $this->performanceDemandFactory = $this->getMock(PerformanceDemandFactory::class, ['createFromSettings']);
-        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $mockSession = $this->getMockBuilder(SessionInterface::class)
+            ->setMethods(['has', 'get', 'clean', 'set', 'setNamespace'])->getMock();
+        $this->performanceDemandFactory = $this->getMockBuilder(PerformanceDemandFactory::class)
+            ->setMethods(['createFromSettings'])->getMock();
+        $mockDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->method('createFromSettings')->will($this->returnValue($mockDemand));
         $this->subject->injectPerformanceDemandFactory($this->performanceDemandFactory);
 
-        $mockResult = $this->getMock(QueryResultInterface::class);
-        $this->performanceRepository = $this->getMock(
-            PerformanceRepository::class,
-            ['findDemanded'], [], '', false);
+        $mockResult = $this->getMockBuilder(QueryResultInterface::class)->getMock();
+        $this->performanceRepository = $this->getMockBuilder(PerformanceRepository::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['findDemanded'])
+            ->getMock();
         $this->performanceRepository->method('findDemanded')->will($this->returnValue($mockResult));
         $this->subject->injectPerformanceRepository($this->performanceRepository);
 
-        $this->view = $this->getMock(TemplateView::class, ['assign', 'assignMultiple'], [], '', false);
-        $mockContentObject = $this->getMock(ContentObjectRenderer::class);
-        $mockDispatcher = $this->getMock(Dispatcher::class);
-        $mockRequest = $this->getMock(Request::class);
-        $mockConfigurationManager = $this->getMock(
-            ConfigurationManagerInterface::class,
-            ['getContentObject', 'setContentObject', 'getConfiguration',
-                'setConfiguration', 'isFeatureEnabled']
-        );
-        $mockObjectManager = $this->getMock(ObjectManager::class);
+        $this->view = $this->getMockBuilder(TemplateView::class)
+            ->disableOriginalConstructor()
+            ->setMethods(['assign', 'assignMultiple'])
+            ->getMock();
+        $mockContentObject = $this->getMockBuilder(ContentObjectRenderer::class)->getMock();
+        $mockDispatcher = $this->getMockBuilder(Dispatcher::class)->getMock();
+        $mockRequest = $this->getMockBuilder(Request::class)->getMock();
+        $mockConfigurationManager = $this->getMockBuilder(ConfigurationManagerInterface::class)
+            ->setMethods(
+                ['getContentObject', 'setContentObject', 'getConfiguration', 'setConfiguration', 'isFeatureEnabled']
+            )->getMock();
+        $mockObjectManager = $this->getMockBuilder(ObjectManager::class)->getMock();
 
         $this->subject->_set('view', $this->view);
         $this->subject->_set('session', $mockSession);
@@ -119,13 +122,11 @@ class CalendarControllerTest extends UnitTestCase
         $this->calendarConfigurationFactory->method('create')
             ->will($this->returnValue($mockCalendarConfiguration));
         $this->subject->injectCalendarConfigurationFactory($this->calendarConfigurationFactory);
-        $this->session = $this->getMock(
-            SessionInterface::class, ['get', 'set', 'has', 'clean', 'setNamespace']
-        );
+        $this->session = $this->getMockBuilder(SessionInterface::class)
+            ->setMethods(['get', 'set', 'has', 'clean', 'setNamespace'])->getMock();
         $this->subject->injectSession($this->session);
-        $this->calendarFactory = $this->getMock(
-            CalendarFactory::class, ['create']
-        );
+        $this->calendarFactory = $this->getMockBuilder(CalendarFactory::class)
+            ->setMethods(['create'])->getMock();
         $this->subject->injectCalendarFactory($this->calendarFactory);
     }
 
@@ -147,7 +148,10 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function constructorSetsExtensionName()
     {
-        $subject = $this->getMock(CalendarController::class, [], [], 'tx_foo_class', false);
+        $subject = $this->getMockBuilder(CalendarController::class)
+            ->disableOriginalConstructor()
+            ->setMockClassName('tx_foo_class')
+            ->getMock();
         $subject->__construct();
         $this->assertAttributeSame(
             'foo',
@@ -182,9 +186,8 @@ class CalendarControllerTest extends UnitTestCase
 
     protected function mockSettingsUtility()
     {
-        $mockSettingsUtility = $this->getMock(
-            SettingsUtility::class, ['getControllerKey']
-        );
+        $mockSettingsUtility = $this->getMockBuilder(SettingsUtility::class)
+            ->setMethods(['getControllerKey'])->getMock();
         $this->subject->injectSettingsUtility($mockSettingsUtility);
         $mockSettingsUtility->expects($this->any())
             ->method('getControllerKey')
@@ -196,7 +199,7 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function showActionGetsPerformanceDemandFromFactory()
     {
-        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $mockDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->expects($this->once())
             ->method('createFromSettings')
             ->with($this->settings)
@@ -228,7 +231,7 @@ class CalendarControllerTest extends UnitTestCase
         $this->performanceDemandFactory = $this->getMockForAbstractClass(
             PerformanceDemandFactory::class, [], '', false, true, true, ['createFromSettings']
         );
-        $mockPerformanceDemand = $this->getMock(PerformanceDemand::class);
+        $mockPerformanceDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->expects($this->once())
             ->method('createFromSettings')
             ->will($this->returnValue($mockPerformanceDemand));
@@ -249,7 +252,7 @@ class CalendarControllerTest extends UnitTestCase
         $this->subject->injectPerformanceRepository($this->performanceRepository);
         $this->subject->_set('view', $this->view);
 
-        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $mockDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->method('createFromSettings')
             ->will($this->returnValue($mockDemand));
         $this->subject->expects($this->once())
@@ -286,7 +289,7 @@ class CalendarControllerTest extends UnitTestCase
      */
     public function controlActionGetsPerformanceDemandFromFactory()
     {
-        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $mockDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->expects($this->once())
             ->method('createFromSettings')
             ->with($this->settings)
@@ -330,7 +333,7 @@ class CalendarControllerTest extends UnitTestCase
         $this->subject->injectPerformanceRepository($this->performanceRepository);
         $this->subject->_set('view', $this->view);
 
-        $mockDemand = $this->getMock(PerformanceDemand::class);
+        $mockDemand = $this->getMockBuilder(PerformanceDemand::class)->getMock();
         $this->performanceDemandFactory->method('createFromSettings')
             ->will($this->returnValue($mockDemand));
         $this->subject->expects($this->once())
